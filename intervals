@@ -1,0 +1,88 @@
+# regression analysis for first last assignment
+
+#confidence interval: range of values contain true mean
+#prediction interval:range of values contain true value
+par(mfrow = c(1,1))
+?par
+b1 = 5
+b0 = .5
+
+
+x = seq(1,15, length.out = 100)
+y = b0+b1 *x +rnorm(length(x), mean = 0, sd=5)
+
+df <- data.frame(x=x, y=y)
+
+
+plot( x, y)
+
+model <- lm(y ~x, data = df)
+summary(model)
+
+#b1, b0 = slope, intercept
+
+# sample size
+samp_size = length(y)
+#y_pred
+y_pred = predict(model)
+#residuals
+resid = residuals(model)
+# sqrt(MSE)
+MSE <- sum(resid^2) / (samp_size - 2)
+var1 <- sqrt(MSE)
+
+
+# nu of params
+num_params = 2
+# n- p degrees of freedom
+degfree = samp_size-2
+alpha = .05
+t = qt(1-alpha/2, degfree)
+
+x_mean = mean(x)
+
+ssx = sum((x - x_mean)^2)
+
+
+
+confidence <- function(y0,t,syx,x0,xm,SSx,n){
+  #SSx = sum(x-xm)^2
+  
+  
+  half = t*syx* sqrt((((x0-xm)^2)/SSx)+1/n)
+  c(lower_half = y0 -half, upper_half = y0+ half)
+  
+}
+
+prediction <- function(y0,t,syx,x0,xm,SSx,n){
+  half = t*syx*sqrt((((x0-xm)^2)/SSx)+(1/n)+1)
+  
+  c(lower_half = y0 -half, upper_half = y0 +half)
+}
+
+x0= 15
+
+y0 = predict(model,newdata = data.frame(x=x0))
+
+con_int = confidence(y0, t, var1, x0 , x_mean, ssx, samp_size)
+pred_int = prediction(y0, t, var1, x0 , x_mean, ssx, samp_size)
+
+pred_full <- predict(model, interval = "confidence")
+pred_pred <- predict(model, interval = "prediction")
+
+par(mar = c(5.1, 4.1, 4.1, 2.1))
+plot(x, y, pch = 16, col = "blue",
+     main = "Regression with Confidence & Prediction Intervals",
+     xlab = "x", ylab = "y")
+
+# Regression line
+lines(x, pred_full[, "fit"], col = "pink", lwd = 2)
+
+# Confidence interval (narrow)
+lines(x, pred_full[, "lwr"], col = "darkgreen", lwd = 2, lty = 2)
+lines(x, pred_full[, "upr"], col = "darkgreen", lwd = 2, lty = 2)
+
+# Prediction interval (wide)
+lines(x, pred_pred[, "lwr"], col = "purple", lwd = 2, lty = 3)
+lines(x, pred_pred[, "upr"], col = "purple", lwd = 2, lty = 3)
+
